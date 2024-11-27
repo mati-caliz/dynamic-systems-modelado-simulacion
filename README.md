@@ -1,1 +1,1 @@
-# algoritmos-modelado-simulaci-n
+# algoritmos-modelado-simulacion
