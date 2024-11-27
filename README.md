@@ -1,4 +1,4 @@
-# algoritmos-modelado-simulacion
+# sistemas dinámicos - modelado y simulacion
 ## Descripción
 Este proyecto, desarrollado para la materia de Modelado y Simulación de la Facultad UADE, aborda el análisis y simulación de sistemas dinámicos tanto lineales como no lineales. Incluye herramientas para estudiar bifurcaciones en estos sistemas, permitiendo la identificación y clasificación de puntos de equilibrio, así como la visualización de retratos de fase y diagramas de bifurcación.
 ## Estructura
