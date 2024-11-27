@@ -178,6 +178,7 @@ def main():
     B = None
     # B = np.array([-5, -7]) o B = None
     process_system(A, B)
+    # A
 
 
 if __name__ == "__main__":
