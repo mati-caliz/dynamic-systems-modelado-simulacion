@@ -13,9 +13,20 @@ def define_equations(x, y):
     # Ejemplo de ecuaciones:
     # x' = y - x**2 - 2
     # y' = x**2 - x*y
-    x_function = x ** 2 - y ** 2 - 1
-    y_function = 2*y
+    x_function = x**2+y**2-2
+    y_function = x**2-y**2
     return x_function, y_function
+
+
+def compute_jacobian_symbolic(f_sym, g_sym, variables):
+    jacobian_matrix = Matrix([[f_sym.diff(var) for var in variables],
+                              [g_sym.diff(var) for var in variables]])
+    print("Matriz Jacobiana Simbólica del Sistema:")
+    for i in range(jacobian_matrix.shape[0]):
+        for j in range(jacobian_matrix.shape[1]):
+            print(jacobian_matrix[i, j], end="\t")
+        print()
+    print()
 
 
 def lambdify_functions(x_sym, y_sym, f_sym, g_sym):
@@ -194,6 +205,7 @@ def run_system(f, g):
 def main():
     x_sym, y_sym = define_symbols()
     f_sym, g_sym = define_equations(x_sym, y_sym)
+    compute_jacobian_symbolic(f_sym, g_sym, (x_sym, y_sym))
     f, g = lambdify_functions(x_sym, y_sym, f_sym, g_sym)
     run_system(f, g)
 
