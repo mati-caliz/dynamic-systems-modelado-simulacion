@@ -4,19 +4,12 @@ from scipy.linalg import eig
 from scipy.optimize import fsolve
 from sympy import symbols, Matrix, lambdify
 
+x, y = symbols('x y')
 
-def define_symbols():
-    return symbols('x y')
-
-
-def define_equations(x, y):
-    # Ejemplo de ecuaciones:
-    # x' = y - x**2 - 2
-    # y' = x**2 - x*y
-    x_function = x**2+y**2-2
-    y_function = x**2-y**2
-    return x_function, y_function
-
+def process_system(f_sym, g_sym):
+    compute_jacobian_symbolic(f_sym, g_sym, (x, y))
+    f, g = lambdify_functions(x, y, f_sym, g_sym)
+    run_system(f, g)
 
 def compute_jacobian_symbolic(f_sym, g_sym, variables):
     jacobian_matrix = Matrix([[f_sym.diff(var) for var in variables],
@@ -28,27 +21,23 @@ def compute_jacobian_symbolic(f_sym, g_sym, variables):
         print()
     print()
 
-
 def lambdify_functions(x_sym, y_sym, f_sym, g_sym):
     f = lambdify((x_sym, y_sym), f_sym, modules='numpy')
     g = lambdify((x_sym, y_sym), g_sym, modules='numpy')
     return f, g
-
 
 def vectorize_functions(f, g):
     f_vectorized = np.vectorize(f)
     g_vectorized = np.vectorize(g)
     return f_vectorized, g_vectorized
 
-
-def compute_jacobian_numeric(f, g, x, y, h=1e-5):
-    df_dx = (f(x + h, y) - f(x - h, y)) / (2 * h)
-    df_dy = (f(x, y + h) - f(x, y - h)) / (2 * h)
-    dg_dx = (g(x + h, y) - g(x - h, y)) / (2 * h)
-    dg_dy = (g(x, y + h) - g(x, y - h)) / (2 * h)
+def compute_jacobian_numeric(f, g, x_val, y_val, h=1e-5):
+    df_dx = (f(x_val + h, y_val) - f(x_val - h, y_val)) / (2 * h)
+    df_dy = (f(x_val, y_val + h) - f(x_val, y_val - h)) / (2 * h)
+    dg_dx = (g(x_val + h, y_val) - g(x_val - h, y_val)) / (2 * h)
+    dg_dy = (g(x_val, y_val + h) - g(x_val, y_val - h)) / (2 * h)
     return np.array([[df_dx, df_dy],
                      [dg_dx, dg_dy]])
-
 
 def find_equilibria(f, g, initial_guesses, tolerance=1e-5):
     equilibria = []
@@ -68,8 +57,6 @@ def find_equilibria(f, g, initial_guesses, tolerance=1e-5):
             print(f"Error al resolver con aproximación inicial {guess}: {e}")
     return equilibria
 
-
-
 def analyze_equilibria(equilibria, f, g):
     results = []
     for eq in equilibria:
@@ -83,7 +70,6 @@ def analyze_equilibria(equilibria, f, g):
         })
     return results
 
-
 def format_eigenvalue(eigenvalue, decimals=4):
     real = np.round(eigenvalue.real, decimals)
     imag = np.round(eigenvalue.imag, decimals)
@@ -94,7 +80,6 @@ def format_eigenvalue(eigenvalue, decimals=4):
     else:
         sign = '+' if imag > 0 else '-'
         return f"{real} {sign} {np.abs(imag)}i"
-
 
 def classify_equilibrium(eigenvalues, tol=1e-10):
     real_parts = np.real(eigenvalues)
@@ -125,7 +110,6 @@ def classify_equilibrium(eigenvalues, tol=1e-10):
         else:
             return "Otro tipo de equilibrio"
 
-
 def display_results(results):
     for result in results:
         eq = result["equilibrium"]
@@ -143,8 +127,7 @@ def display_results(results):
         classification = classify_equilibrium(eigenvalues)
         print("\nClasificación del sistema:", classification)
 
-
-def plot_phase_portrait(f_vectorized, g_vectorized, results, x_range=(-1, 3), y_range=(-1, 4), density=1.5):
+def plot_phase_portrait(f_vectorized, g_vectorized, results, x_range=(-2, 2), y_range=(-2, 2), density=1.5):
     x_vals = np.linspace(x_range[0], x_range[1], 400)
     y_vals = np.linspace(y_range[0], y_range[1], 400)
     X, Y = np.meshgrid(x_vals, y_vals)
@@ -169,46 +152,29 @@ def plot_phase_portrait(f_vectorized, g_vectorized, results, x_range=(-1, 3), y_
     plt.ylim(y_range)
     plt.show()
 
-
-
 def run_system(f, g):
     f_vectorized, g_vectorized = vectorize_functions(f, g)
 
     initial_guesses = [
         [0, 0],
-        [2, 0],
-        [0, 3],
-        [2, 3],
-        [1, 1.5],
         [1, 1],
-        [3, 3],
-        [-1, -1]
+        [-1, -1],
+        [1, -1],
+        [-1, 1]
     ]
 
-    # Encontrar puntos de equilibrio
     equilibria = find_equilibria(f, g, initial_guesses)
-
     print("Puntos de equilibrio encontrados:")
     for eq in equilibria:
         print(np.round(eq, 5))
-
-    # Analizar los puntos de equilibrio
     results = analyze_equilibria(equilibria, f, g)
-
-    # Mostrar los resultados
     display_results(results)
-
-    # Graficar el diagrama de fase
     plot_phase_portrait(f_vectorized, g_vectorized, results)
 
-
 def main():
-    x_sym, y_sym = define_symbols()
-    f_sym, g_sym = define_equations(x_sym, y_sym)
-    compute_jacobian_symbolic(f_sym, g_sym, (x_sym, y_sym))
-    f, g = lambdify_functions(x_sym, y_sym, f_sym, g_sym)
-    run_system(f, g)
-
+    x_function = x**2 + y**2 - 2
+    y_function = x**2 - y**2
+    process_system(x_function, y_function)
 
 if __name__ == "__main__":
     main()
