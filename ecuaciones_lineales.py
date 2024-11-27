@@ -157,31 +157,16 @@ def display_eigen_info(eigenvalues, eigenvectors):
 
 
 def process_system(A, B):
-    # Validar entradas
     validate_inputs(A, B)
-
-    # Calcular el punto de equilibrio
     equilibrium_point = calculate_equilibrium_point(A, B)
-
-    # Calcular valores propios y vectores propios
     eigenvalues, eigenvectors = eig(A)
-
-    # Escalar los vectores propios para facilitar la interpretación
     V1 = scale_eigenvector(eigenvectors[:, 0])
     V2 = scale_eigenvector(eigenvectors[:, 1])
-
-    # Mostrar valores propios y vectores propios escalados
     display_eigen_info(eigenvalues, eigenvectors)
-
-    # Clasificar el sistema
     system_type = classify_system(eigenvalues)
     print("\nTipo de sistema:", system_type)
     print("Punto de equilibrio:", equilibrium_point)
-
-    # Generar la ecuación general del sistema
     print_general_equation(eigenvalues, eigenvectors)
-
-    # Graficar el diagrama de fase
     plot_phase_portrait(A, V1, V2, equilibrium_point, B)
 
 
