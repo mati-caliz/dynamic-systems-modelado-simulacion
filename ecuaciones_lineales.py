@@ -134,35 +134,15 @@ def plot_phase_portrait(A, V1, V2, equilibrium_point, B=None):
     plt.show()
 
 
-def main():
-    # Definir la matriz A
-    A = np.array([[-4/3, 1/3],
-                  [2/3, -5/3]])
-
-    # Definir el vector B (si no existe dejar None)
-    B = None
-    # B = np.array([-5, -7])
-    # B = None
-
-    # Validaciones
+def validate_inputs(A, B):
     if A.shape[0] != A.shape[1]:
         raise ValueError("La matriz A debe ser cuadrada.")
     if B is not None and B.shape[0] != A.shape[0]:
         raise ValueError("El vector B debe tener la misma cantidad de filas que A.")
 
-    # Calcular el punto de equilibrio
-    equilibrium_point = calculate_equilibrium_point(A, B)
 
-    # Calcular valores propios y vectores propios
-    eigenvalues, eigenvectors = eig(A)
-
-    # Escalar los vectores propios para facilitar la interpretación
-    V1 = scale_eigenvector(eigenvectors[:, 0])
-    V2 = scale_eigenvector(eigenvectors[:, 1])
-
-    # Mostrar valores propios y vectores propios escalados
+def display_eigen_info(eigenvalues, eigenvectors):
     print("Valores propios:")
-
     for i, eigenvalue in enumerate(eigenvalues):
         print(f"\nλ{i + 1} = {format_complex(eigenvalue)}")
         vector = eigenvectors[:, i]
@@ -170,16 +150,29 @@ def main():
         formatted_vector = [format_complex(component) for component in scaled_vector]
         print(f"Vector propio V{i + 1}: {formatted_vector}")
 
-    # Clasificar el sistema
+
+def process_system(A, B):
+    validate_inputs(A, B)
+    equilibrium_point = calculate_equilibrium_point(A, B)
+    eigenvalues, eigenvectors = eig(A)
+    V1 = scale_eigenvector(eigenvectors[:, 0])
+    V2 = scale_eigenvector(eigenvectors[:, 1])
+    display_eigen_info(eigenvalues, eigenvectors)
     system_type = classify_system(eigenvalues)
     print("\nTipo de sistema:", system_type)
     print("Punto de equilibrio:", equilibrium_point)
-
-    # Generar la ecuación general del sistema
     print_general_equation(eigenvalues, eigenvectors)
-
-    # Graficar el diagrama de fase
     plot_phase_portrait(A, V1, V2, equilibrium_point, B)
+
+
+def main():
+    # Definir la matriz A
+    A = np.array([[3, -2],
+                  [4, -1]])
+    # Definir el vector B (si no existe dejar None)
+    B = None
+    # B = np.array([-5, -7]) o B = None
+    process_system(A, B)
 
 
 if __name__ == "__main__":
