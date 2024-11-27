@@ -15,6 +15,7 @@ Para ejecutar los scripts de este proyecto, es necesario contar con las siguient
 - matplotlib
 - scipy
 - sympy
+
 Podes instalar las dependencias usando pip:
 ```pip install -r requisitos.txt```
 
