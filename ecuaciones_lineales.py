@@ -16,27 +16,28 @@ def classify_system(eigenvalues, tol=1e-10):
     real_parts = np.real(eigenvalues)
     imag_parts = np.imag(eigenvalues)
 
-    # Tratar partes reales muy pequeñas como cero
+    # Tratar partes reales e imaginarias muy pequeñas como cero
     real_parts[np.abs(real_parts) < tol] = 0
+    imag_parts[np.abs(imag_parts) < tol] = 0
 
-    if np.all(imag_parts != 0):
+    if np.all(imag_parts != 0):  # Valores propios complejos
         if np.all(real_parts == 0):
             return "Centro (valores propios puramente imaginarios)"
         elif np.all(real_parts < 0):
             return "Foco Estable (valores propios complejos con parte real negativa)"
         elif np.all(real_parts > 0):
             return "Foco Inestable (valores propios complejos con parte real positiva)"
-        else:
-            return "Caso Indeterminado (valores propios complejos con partes reales de signos opuestos)"
-    else:
+    else:  # Valores propios reales
         if np.all(real_parts > 0):
-            return "Nodo Inestable (valores propios reales y positivos)"
+            return "Nodo Inestable (valores propios reales positivos)"
         elif np.all(real_parts < 0):
-            return "Nodo Estable (valores propios reales y negativos)"
+            return "Nodo Estable (valores propios reales negativos)"
         elif np.any(real_parts > 0) and np.any(real_parts < 0):
             return "Punto Silla (valores propios reales de signos opuestos)"
-        else:
-            return "Valores propios reales nulos o repetidos"
+        elif np.all(real_parts == 0):
+            return "Nodo Degenerado (valores propios reales repetidos)"
+
+    return "Caso no clasificado"
 
 
 def format_complex(complex_number, decimals=2, tolerance=1e-10):
@@ -61,15 +62,19 @@ def scale_eigenvector(vector):
 
 def print_general_equation(eigenvalues, eigenvectors, tol=1e-10, decimals=2):
     print("\nEcuación general combinada del sistema:")
-    if np.all(np.iscomplex(eigenvalues)):
+    if np.all(np.iscomplex(eigenvalues)) and not np.all(np.imag(eigenvalues) == 0):
         lambda_real = np.real(eigenvalues[0])
         lambda_imag = np.imag(eigenvalues[0])
         vector = eigenvectors[:, 0]
         c1, c2 = 'C1', 'C2'
-        x_eq = f"({format_complex(vector[0].real)} * {c1} - {format_complex(vector[0].imag)} * {c2}) * cos({round(lambda_imag, decimals)}t) " \
-               f"- ({format_complex(vector[0].imag)} * {c1} + {format_complex(vector[0].real)} * {c2}) * sin({round(lambda_imag, decimals)}t)"
-        y_eq = f"({format_complex(vector[1].real)} * {c1} - {format_complex(vector[1].imag)} * {c2}) * cos({round(lambda_imag, decimals)}t) " \
-               f"- ({format_complex(vector[1].imag)} * {c1} + {format_complex(vector[1].real)} * {c2}) * sin({round(lambda_imag, decimals)}t)"
+        x_eq = (f"({format_complex(vector[0].real)} * {c1} - {format_complex(vector[0].imag)} * {c2}) * "
+                f"cos({round(lambda_imag, decimals)}t) - "
+                f"({format_complex(vector[0].imag)} * {c1} + {format_complex(vector[0].real)} * {c2}) * "
+                f"sin({round(lambda_imag, decimals)}t)")
+        y_eq = (f"({format_complex(vector[1].real)} * {c1} - {format_complex(vector[1].imag)} * {c2}) * "
+                f"cos({round(lambda_imag, decimals)}t) - "
+                f"({format_complex(vector[1].imag)} * {c1} + {format_complex(vector[1].real)} * {c2}) * "
+                f"sin({round(lambda_imag, decimals)}t)")
         print(f"x(t) = {x_eq}")
         print(f"y(t) = {y_eq}")
     else:
@@ -119,9 +124,9 @@ def plot_phase_portrait(A, V1, V2, equilibrium_point, B=None):
     X, Y = np.meshgrid(x_vals, y_vals)
     # Ajustar el campo de direcciones
     U = A[0, 0] * (X - equilibrium_point[0]) + A[0, 1] * (Y - equilibrium_point[1])
-    V = A[1, 0] * (X - equilibrium_point[0]) + A[1, 1] * (Y - equilibrium_point[1])
+    V_dir = A[1, 0] * (X - equilibrium_point[0]) + A[1, 1] * (Y - equilibrium_point[1])
     fig, ax = plt.subplots()
-    ax.streamplot(X, Y, U, V, color='b', density=1.5, linewidth=0.8)
+    ax.streamplot(X, Y, U, V_dir, color='b', density=1.5, linewidth=0.8)
     plot_extended_vectors(ax, equilibrium_point, V1, V2, axis_limit)
 
     ax.set_title("Diagrama de Fase del Sistema Lineal")
@@ -152,23 +157,38 @@ def display_eigen_info(eigenvalues, eigenvectors):
 
 
 def process_system(A, B):
+    # Validar entradas
     validate_inputs(A, B)
+
+    # Calcular el punto de equilibrio
     equilibrium_point = calculate_equilibrium_point(A, B)
+
+    # Calcular valores propios y vectores propios
     eigenvalues, eigenvectors = eig(A)
+
+    # Escalar los vectores propios para facilitar la interpretación
     V1 = scale_eigenvector(eigenvectors[:, 0])
     V2 = scale_eigenvector(eigenvectors[:, 1])
+
+    # Mostrar valores propios y vectores propios escalados
     display_eigen_info(eigenvalues, eigenvectors)
+
+    # Clasificar el sistema
     system_type = classify_system(eigenvalues)
     print("\nTipo de sistema:", system_type)
     print("Punto de equilibrio:", equilibrium_point)
+
+    # Generar la ecuación general del sistema
     print_general_equation(eigenvalues, eigenvectors)
+
+    # Graficar el diagrama de fase
     plot_phase_portrait(A, V1, V2, equilibrium_point, B)
 
 
 def main():
     # Definir la matriz A
-    A = np.array([[3, -2],
-                  [4, -1]])
+    A = np.array([[6, -2],
+                  [2, 2]])
     # Definir el vector B (si no existe dejar None)
     B = None
     # B = np.array([-5, -7]) o B = None
