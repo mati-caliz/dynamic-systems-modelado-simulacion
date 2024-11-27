@@ -3,8 +3,8 @@ import matplotlib.pyplot as plt
 from scipy.linalg import eig
 
 # Definir la matriz A
-A = np.array([[0.1, 0.4],
-              [0.4, -0.1]])
+A = np.array([[3/2, 1/2],
+              [1/2, 3/2]])
 
 # Definir el vector B (si no existe dejar None)
 B = None
@@ -68,6 +68,31 @@ system_type = classify_system(eigenvalues)
 print("\nTipo de sistema:", system_type)
 print("Punto de equilibrio:", equilibrium_point)
 
+# Generar la ecuación general basada en vectores propios y valores propios
+def print_general_equation(eigenvalues, eigenvectors):
+    equations = []
+    for i, eigenvalue in enumerate(eigenvalues):
+        vector = simplify_vector(eigenvectors[:, i].real)
+        x_eq = f"{vector[0]}e^({eigenvalue.real:.2f}t)"
+        y_eq = f"{vector[1]}e^({eigenvalue.real:.2f}t)"
+        equations.append((x_eq, y_eq))
+        print(f"Ecuación {i + 1}: x' = {x_eq}, y' = {y_eq}")
+
+# Imprimir la ecuación general
+print("\nEcuación general del sistema:")
+print_general_equation(eigenvalues, eigenvectors)
+
+
+# Graficar los vectores propios como líneas extendidas
+def plot_extended_vectors(ax, equilibrium_point, V1, V2, axis_limit):
+    t = np.linspace(-axis_limit, axis_limit, 100)
+    V1_line = equilibrium_point[:, None] + t * V1[:, None]
+    V2_line = equilibrium_point[:, None] + t * V2[:, None]
+
+    ax.plot(V1_line[0], V1_line[1], 'r-', label=f"V1 {V1}")
+    ax.plot(V2_line[0], V2_line[1], 'g-', label=f"V2 {V2}")
+
+
 # Función para graficar las trayectorias
 def plot_phase_portrait(A, V1, V2, equilibrium_point, B=None):
     eigenvalues, _ = eig(A)
@@ -83,11 +108,10 @@ def plot_phase_portrait(A, V1, V2, equilibrium_point, B=None):
     fig, ax = plt.subplots()
     ax.streamplot(X, Y, U, V, color='b', density=1.2, linewidth=0.8)
 
-    # Graficar los vectores propios desde el punto de equilibrio
-    ax.quiver(equilibrium_point[0], equilibrium_point[1], V1[0], V1[1], angles='xy', scale_units='xy', scale=1, color='r', label=f"V1 {V1}")
-    ax.quiver(equilibrium_point[0], equilibrium_point[1], V2[0], V2[1], angles='xy', scale_units='xy', scale=1, color='g', label=f"V2 {V2}")
+    # Graficar los vectores propios como líneas extendidas
+    plot_extended_vectors(ax, equilibrium_point, V1, V2, axis_limit)
 
-    ax.set_title("Diagrama de Fase con Vectores Propios Simplificados y Punto de Equilibrio")
+    ax.set_title("Diagrama de Fase del Sistema Lineal")
     ax.set_xlabel("x")
     ax.set_ylabel("y")
     ax.legend()
@@ -96,5 +120,8 @@ def plot_phase_portrait(A, V1, V2, equilibrium_point, B=None):
     plt.grid()
     plt.show()
 
+
 # Graficar el diagrama de fase
 plot_phase_portrait(A, V1, V2, equilibrium_point, B)
+
+
