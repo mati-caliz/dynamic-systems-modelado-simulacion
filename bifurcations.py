@@ -2,9 +2,6 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 
-# ========================
-# Definición de Sistemas Dinámicos
-# ========================
 
 def system_silla_nodo(x, mu):
     return mu + x ** 2
@@ -13,10 +10,6 @@ def system_silla_nodo(x, mu):
 def system_transcritica(x, mu):
     return mu * x - x ** 2
 
-
-# ========================
-# Diagramas de Bifurcación
-# ========================
 
 def bifurcation_silla_nodo(mu_range):
     x_positive = [np.sqrt(abs(mu)) if mu > 0 else None for mu in mu_range]
@@ -29,10 +22,6 @@ def bifurcation_transcritica(mu_range):
     x_equilibrium_2 = mu_range.copy()
     return x_equilibrium_1, x_equilibrium_2
 
-
-# ========================
-# Funciones de Plotting
-# ========================
 
 def plot_sistema(ax, system_func, x, mu, title):
     y = system_func(x, mu)
@@ -66,22 +55,11 @@ def clean_extra_subplots(fig, axes, used_axes):
             fig.delaxes(ax)
 
 
-# ========================
-# Función Principal
-# ========================
-
 def main():
-    # Rango de valores
     x = np.linspace(-2, 2, 400)
     mu_range = np.linspace(-2, 2, 200)
-
-    # Crear subplots
     fig, axes = setup_subplots(3, 3, figsize=(18, 15))
-
-    # Mantener un registro de los índices de ejes utilizados
     used_axes = []
-
-    # ===== Silla-Nodo =====
     silla_nodo_mus = [-1, 0, 1]
     for i, mu in enumerate(silla_nodo_mus):
         ax = axes[i]
@@ -93,8 +71,6 @@ def main():
             title=rf"Silla-Nodo: $\mu = {mu}$"
         )
         used_axes.append(i)
-
-    # Diagrama de bifurcación para Silla-Nodo
     x_positive, x_negative = bifurcation_silla_nodo(mu_range)
     equilibria_silla_nodo = [
         (x_positive, "Equilibrio estable"),
