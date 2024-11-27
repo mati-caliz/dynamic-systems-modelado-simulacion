@@ -6,31 +6,31 @@ from scipy.linalg import eig
 A = np.array([[0.1, 0.4],
               [0.4, -0.1]])
 
-# Definir el vector B (si no tienes B, déjalo como None)
-B = None  # np.array([-5, -7])  Si no tienes B, usa B = None
+# Definir el vector B (si no existe dejar None)
+B = None
+# B = np.array([-5, -7])
+# B = None
 
 # Calcular el punto de equilibrio
-if B is not None:
-    # Si B está definido, resolver el punto de equilibrio
-    equilibrium_point = np.dot(np.linalg.pinv(A), -B)
+def calculate_equilibrium_point(A, B=None):
+    if B is None:
+        return np.array([0, 0])
+    return np.dot(np.linalg.pinv(A), -B)
 
-else:
-    # Si B no está definido, el punto de equilibrio es el origen
-    equilibrium_point = np.array([0, 0])
+equilibrium_point = calculate_equilibrium_point(A, B)
 
 # Calcular valores propios y vectores propios
 eigenvalues, eigenvectors = eig(A)
 
-# Función para simplificar el vector propio manteniendo proporción sin redondear a cero
-def simplify_vector(v):
-    v = np.round(v, decimals=5)  # Redondear componentes pequeñas a un número razonable de decimales
-    abs_v = np.abs(v)
-    if np.any(abs_v > 1e-5):  # Verificamos que no todas las componentes son prácticamente cero
-        min_nonzero = abs_v[abs_v > 1e-5].min()
-        v = (v / min_nonzero).astype(int)
-        if v[0] < 0:  # Normalizar el signo para que el primer componente sea positivo
-            v = -v
-    return v
+def simplify_vector(vector):
+    vector = np.round(vector, decimals=5)
+    absolute_vector = np.abs(vector)
+    if np.any(absolute_vector > 1e-5):  # Simplificar solo si hay valores significativos
+        min_nonzero = absolute_vector[absolute_vector > 1e-5].min()
+        vector = (vector / min_nonzero).astype(int)
+        if vector[0] < 0:  # Normalizar el signo para que el primer componente sea positivo
+            vector = -vector
+    return vector
 
 # Mostrar valores propios y simplificar los vectores propios
 print("Valores propios (solo parte real):")
@@ -40,12 +40,11 @@ for i, eigenvalue in enumerate(eigenvalues):
     # Obtener y simplificar el vector propio
     vector = eigenvectors[:, i].real
     vector = simplify_vector(vector)
-
     print(f"Vector propio simplificado V{i + 1}: {vector}")
 
 # Asignar los vectores propios simplificados a V1 y V2
-V1 = simplify_vector(eigenvectors[:, 0].real)  # Primer vector propio simplificado
-V2 = simplify_vector(eigenvectors[:, 1].real)  # Segundo vector propio simplificado
+V1 = simplify_vector(eigenvectors[:, 0].real)
+V2 = simplify_vector(eigenvectors[:, 1].real)
 
 # Determinar el tipo de sistema
 def classify_system(eigenvalues):
@@ -69,14 +68,13 @@ system_type = classify_system(eigenvalues)
 print("\nTipo de sistema:", system_type)
 print("Punto de equilibrio:", equilibrium_point)
 
-# Función para graficar las trayectorias con vectores propios simplificados y el punto de equilibrio
+# Función para graficar las trayectorias
 def plot_phase_portrait(A, V1, V2, equilibrium_point, B=None):
+    eigenvalues, _ = eig(A)
     max_eigenvalue = max(np.abs(eigenvalues.real))
     axis_limit = max(3, max_eigenvalue * 1.5)  # Aumentar el rango para mejor visualización
-
     x_vals = np.linspace(-axis_limit, axis_limit, 20) + equilibrium_point[0]
     y_vals = np.linspace(-axis_limit, axis_limit, 20) + equilibrium_point[1]
-
     X, Y = np.meshgrid(x_vals, y_vals)
     # Ajustar el campo de direcciones según si B está definido o no
     U = A[0, 0] * (X - equilibrium_point[0]) + A[0, 1] * (Y - equilibrium_point[1]) + (B[0] if B is not None else 0)
