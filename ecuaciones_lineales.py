@@ -4,16 +4,6 @@ from scipy.linalg import eig
 
 
 def calculate_equilibrium_point(A, B=None):
-    """
-    Calcula el punto de equilibrio del sistema lineal.
-
-    Parámetros:
-    - A: Matriz de coeficientes del sistema.
-    - B: Vector constante (opcional).
-
-    Retorna:
-    - equilibrium_point: Vector con el punto de equilibrio.
-    """
     if B is None:
         return np.zeros(A.shape[0])
     try:
@@ -23,17 +13,6 @@ def calculate_equilibrium_point(A, B=None):
 
 
 def simplify_vector(vector, tol=1e-5, max_scale=100):
-    """
-    Simplifica un vector propio intentando escalarlo a números enteros.
-
-    Parámetros:
-    - vector: Vector propio a simplificar.
-    - tol: Tolerancia para considerar si un número es entero.
-    - max_scale: Máximo factor de escala a intentar.
-
-    Retorna:
-    - vector simplificado con componentes enteros o normalizado.
-    """
     # Intentar encontrar un factor de escala que convierta los componentes en enteros
     for scale in range(1, max_scale + 1):
         scaled = vector * scale
@@ -49,15 +28,6 @@ def simplify_vector(vector, tol=1e-5, max_scale=100):
 
 
 def classify_system(eigenvalues):
-    """
-    Clasifica el tipo de sistema según los valores propios.
-
-    Parámetros:
-    - eigenvalues: Array de valores propios.
-
-    Retorna:
-    - Tipo de sistema (str).
-    """
     real_parts = np.real(eigenvalues)
     imag_parts = np.imag(eigenvalues)
     if np.all(imag_parts == 0):
@@ -81,13 +51,6 @@ def classify_system(eigenvalues):
 
 
 def print_general_equation(eigenvalues, eigenvectors):
-    """
-    Genera y muestra una única ecuación general para x(t) y y(t) combinando los valores propios y vectores propios.
-
-    Parámetros:
-    - eigenvalues: Array de valores propios.
-    - eigenvectors: Matriz de vectores propios.
-    """
     print("\nEcuación general combinada del sistema:")
 
     # Inicializar ecuaciones combinadas
@@ -113,15 +76,6 @@ def print_general_equation(eigenvalues, eigenvectors):
 
 
 def plot_extended_vectors(ax, equilibrium_point, V1, V2, axis_limit):
-    """
-    Grafica los vectores propios como líneas extendidas en el diagrama de fase.
-
-    Parámetros:
-    - ax: Axes de Matplotlib donde se graficará.
-    - equilibrium_point: Punto de equilibrio.
-    - V1, V2: Vectores propios simplificados.
-    - axis_limit: Límite de los ejes para el gráfico.
-    """
     t = np.linspace(-axis_limit, axis_limit, 100)
     V1_line = equilibrium_point[:, None] + V1[:, None] * t
     V2_line = equilibrium_point[:, None] + V2[:, None] * t
@@ -131,15 +85,6 @@ def plot_extended_vectors(ax, equilibrium_point, V1, V2, axis_limit):
 
 
 def plot_phase_portrait(A, V1, V2, equilibrium_point, B=None):
-    """
-    Grafica el diagrama de fase del sistema lineal.
-
-    Parámetros:
-    - A: Matriz de coeficientes del sistema.
-    - V1, V2: Vectores propios simplificados.
-    - equilibrium_point: Punto de equilibrio.
-    - B: Vector constante (opcional).
-    """
     eigenvalues, _ = eig(A)
     max_eigenvalue = max(np.abs(eigenvalues.real))
     axis_limit = max(3, max_eigenvalue * 2)  # Aumentar el rango para mejor visualización
@@ -169,16 +114,14 @@ def plot_phase_portrait(A, V1, V2, equilibrium_point, B=None):
 
 
 def main():
-    """
-    Función principal que ejecuta el análisis del sistema lineal.
-    """
     # Definir la matriz A
-    A = np.array([[-4/3, 1/3],
-                  [2/3, -5/3]])
+    A = np.array([[2, -2],
+                  [4, -2]])
 
     # Definir el vector B (si no existe dejar None)
     B = None
     # B = np.array([-5, -7])
+    # B = None
 
     # Validaciones
     if A.shape[0] != A.shape[1]:
