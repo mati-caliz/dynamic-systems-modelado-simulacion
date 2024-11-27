@@ -172,12 +172,13 @@ def process_system(A, B):
 
 def main():
     # Definir la matriz A
-    A = np.array([[6, -2],
-                  [2, 2]])
+    A = np.array([[2, -2],
+                  [4, -2]])
     # Definir el vector B (si no existe dejar None)
     B = None
     # B = np.array([-5, -7]) o B = None
     process_system(A, B)
+    # A
 
 
 if __name__ == "__main__":
