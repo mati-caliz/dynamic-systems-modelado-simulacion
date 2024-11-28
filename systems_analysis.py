@@ -50,11 +50,22 @@ def vectorize_functions(f, g):
     return f_vectorized, g_vectorized
 
 def find_equilibria_symbolic(f_sym, g_sym):
-    solutions = solve([f_sym, g_sym], (x, y), dict=True)
+    # Manejar el caso cuando una de las funciones es cero
+    equations = []
+    if f_sym != 0:
+        equations.append(f_sym)
+    else:
+        equations.append(0)
+    if g_sym != 0:
+        equations.append(g_sym)
+    else:
+        equations.append(0)
+    solutions = solve(equations, (x, y), dict=True)
     equilibria = []
     for sol in solutions:
-        eq = (simplify(sol[x]), simplify(sol[y]))
-        equilibria.append(eq)
+        eq_x = simplify(sol.get(x, x))
+        eq_y = simplify(sol.get(y, y))
+        equilibria.append((eq_x, eq_y))
     return equilibria
 
 def analyze_equilibria(equilibria, f_sym, g_sym):
@@ -140,7 +151,15 @@ def plot_phase_portrait(f_vectorized, g_vectorized, results, x_range=(-3, 3), y_
     U = f_vectorized(X, Y)
     V = g_vectorized(X, Y)
     plt.figure(figsize=(10, 8))
-    plt.streamplot(X, Y, U, V, color="blue", density=density, linewidth=1, arrowsize=1)
+    # Evitar división por cero en la normalización
+    with np.errstate(all='ignore'):
+        speed = np.sqrt(U**2 + V**2)
+        U_norm = U / speed
+        V_norm = V / speed
+    # Reemplazar NaN por cero
+    U_norm = np.nan_to_num(U_norm)
+    V_norm = np.nan_to_num(V_norm)
+    plt.streamplot(X, Y, U_norm, V_norm, color="blue", density=density, linewidth=1, arrowsize=1)
     if results:
         eq_points = np.array([[float(eq[0]), float(eq[1])] for eq in [res["equilibrium"] for res in results]])
         plt.scatter(eq_points[:, 0], eq_points[:, 1], color="red", s=100, label="Puntos de equilibrio")
@@ -159,14 +178,17 @@ def run_system(f, g, equilibria):
     f_vectorized, g_vectorized = vectorize_functions(f, g)
     results = []
     for eq in equilibria:
-        eq_numeric = (float(eq[0]), float(eq[1]))
-        results.append({"equilibrium": eq_numeric})
+        try:
+            eq_numeric = (float(eq[0]), float(eq[1]))
+            results.append({"equilibrium": eq_numeric})
+        except (TypeError, ValueError):
+            continue
     plot_phase_portrait(f_vectorized, g_vectorized, results)
 
 def main():
-    x_function = x ** 2 - 1
-    y_function = x
+    x_function = x**2 - 1
+    y_function = y + x**2 - 1  # Aquí establecemos y_function a cero
     process_system(x_function, y_function)
- # TODO: Implementar que funcione cuando alguna de las dos es 0 y = 0 por ejemplo.
+
 if __name__ == "__main__":
     main()
