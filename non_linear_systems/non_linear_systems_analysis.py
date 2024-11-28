@@ -1,24 +1,42 @@
 import numpy as np
 import matplotlib.pyplot as plt
-from scipy.linalg import eig
-from scipy.optimize import fsolve
-from sympy import symbols, Matrix, lambdify
+from sympy import symbols, Matrix, lambdify, solve, simplify
 
 x, y = symbols('x y')
 
 def process_system(f_sym, g_sym):
     compute_jacobian_symbolic(f_sym, g_sym, (x, y))
-    f, g = lambdify_functions(x, y, f_sym, g_sym)
-    run_system(f, g)
+    equilibria = find_equilibria_symbolic(f_sym, g_sym)
+    print("Puntos de equilibrio encontrados:")
+    for eq in equilibria:
+        print(eq)
+    results = analyze_equilibria(equilibria, f_sym, g_sym)
+    display_results(results)
+    f_num, g_num = lambdify_functions(x, y, f_sym, g_sym)
+    run_system(f_num, g_num, equilibria)
 
 def compute_jacobian_symbolic(f_sym, g_sym, variables):
-    jacobian_matrix = Matrix([[f_sym.diff(var) for var in variables],
-                              [g_sym.diff(var) for var in variables]])
-    print("Matriz Jacobiana Simbólica del Sistema:")
-    for i in range(jacobian_matrix.shape[0]):
-        for j in range(jacobian_matrix.shape[1]):
-            print(jacobian_matrix[i, j], end="\t")
-        print()
+    import re
+    def remove_spaces_around_operators(expr_str):
+        expr_str = re.sub(r'\s*([\+\-\*/\^])\s*', r'\1', expr_str)
+        return expr_str
+
+    jacobian_matrix = Matrix([[simplify(f_sym.diff(var)) for var in variables],
+                              [simplify(g_sym.diff(var)) for var in variables]])
+    print("Matriz Jacobiana del Sistema:")
+    matrix_list = jacobian_matrix.tolist()
+    processed_matrix_list = []
+    for row in matrix_list:
+        processed_row = []
+        for expr in row:
+            expr_str = str(expr).replace('**', '^')
+            expr_str = remove_spaces_around_operators(expr_str)
+            processed_row.append(expr_str)
+        processed_matrix_list.append(processed_row)
+    col_widths = [max(len(row[i]) for row in processed_matrix_list) for i in range(len(variables))]
+    for row in processed_matrix_list:
+        row_str = ['{0:>{1}}'.format(row[i], col_widths[i]) for i in range(len(variables))]
+        print('[ ' + '  '.join(row_str) + ' ]')
     print()
 
 def lambdify_functions(x_sym, y_sym, f_sym, g_sym):
@@ -31,118 +49,103 @@ def vectorize_functions(f, g):
     g_vectorized = np.vectorize(g)
     return f_vectorized, g_vectorized
 
-def compute_jacobian_numeric(f, g, x_val, y_val, h=1e-5):
-    df_dx = (f(x_val + h, y_val) - f(x_val - h, y_val)) / (2 * h)
-    df_dy = (f(x_val, y_val + h) - f(x_val, y_val - h)) / (2 * h)
-    dg_dx = (g(x_val + h, y_val) - g(x_val - h, y_val)) / (2 * h)
-    dg_dy = (g(x_val, y_val + h) - g(x_val, y_val - h)) / (2 * h)
-    return np.array([[df_dx, df_dy],
-                     [dg_dx, dg_dy]])
-
-def find_equilibria(f, g, initial_guesses, tolerance=1e-5):
+def find_equilibria_symbolic(f_sym, g_sym):
+    solutions = solve([f_sym, g_sym], (x, y), dict=True)
     equilibria = []
-    for guess in initial_guesses:
-        try:
-            equilibrium, info, ier, mesg = fsolve(
-                lambda vars: [f(vars[0], vars[1]), g(vars[0], vars[1])],
-                guess,
-                full_output=True
-            )
-            if ier == 1:
-                if not any(np.allclose(equilibrium, eq, atol=tolerance) for eq in equilibria):
-                    equilibria.append(equilibrium)
-            else:
-                pass  # No se encontró un equilibrio
-        except Exception as e:
-            print(f"Error al resolver con aproximación inicial {guess}: {e}")
+    for sol in solutions:
+        eq = (simplify(sol[x]), simplify(sol[y]))
+        equilibria.append(eq)
     return equilibria
 
-def analyze_equilibria(equilibria, f, g):
+def analyze_equilibria(equilibria, f_sym, g_sym):
     results = []
     for eq in equilibria:
-        J = compute_jacobian_numeric(f, g, eq[0], eq[1])
-        eigenvalues, eigenvectors = eig(J)
+        J = compute_jacobian_at_equilibrium(f_sym, g_sym, eq)
+        eigenvects = J.eigenvects()
         results.append({
             "equilibrium": eq,
             "jacobian": J,
-            "eigenvalues": eigenvalues,
-            "eigenvectors": eigenvectors
+            "eigenvects": eigenvects
         })
     return results
 
-def format_eigenvalue(eigenvalue, decimals=4):
-    real = np.round(eigenvalue.real, decimals)
-    imag = np.round(eigenvalue.imag, decimals)
-    if np.abs(imag) < 1e-10:
-        return f"{real}"
-    elif real == 0:
-        return f"{imag}i"
-    else:
-        sign = '+' if imag > 0 else '-'
-        return f"{real} {sign} {np.abs(imag)}i"
+def compute_jacobian_at_equilibrium(f_sym, g_sym, eq):
+    jacobian_matrix = Matrix([[simplify(f_sym.diff(var)) for var in (x, y)],
+                              [simplify(g_sym.diff(var)) for var in (x, y)]])
+    J_at_eq = jacobian_matrix.subs({x: eq[0], y: eq[1]})
+    return J_at_eq
 
-def classify_equilibrium(eigenvalues, tol=1e-10):
-    real_parts = np.real(eigenvalues)
-    imag_parts = np.imag(eigenvalues)
-
-    # Tratar partes reales e imaginarias pequeñas como cero
-    real_parts[np.abs(real_parts) < tol] = 0
-    imag_parts[np.abs(imag_parts) < tol] = 0
-
-    if np.all(imag_parts != 0):
-        if np.all(real_parts == 0):
+def classify_equilibrium(eigenvalues):
+    real_parts = [ev.as_real_imag()[0] for ev in eigenvalues]
+    imag_parts = [ev.as_real_imag()[1] for ev in eigenvalues]
+    if all(im != 0 for im in imag_parts):
+        if all(re == 0 for re in real_parts):
             return "Centro (valores propios puramente imaginarios)"
-        elif np.all(real_parts < 0):
+        elif all(re < 0 for re in real_parts):
             return "Foco Estable (valores propios complejos con parte real negativa)"
-        elif np.all(real_parts > 0):
+        elif all(re > 0 for re in real_parts):
             return "Foco Inestable (valores propios complejos con parte real positiva)"
         else:
             return "Espiral Silla (valores propios complejos con partes reales de signos opuestos)"
     else:
-        if np.all(real_parts > 0):
+        if all(re > 0 for re in real_parts):
             return "Nodo Inestable (valores propios reales y positivos)"
-        elif np.all(real_parts < 0):
+        elif all(re < 0 for re in real_parts):
             return "Nodo Estable (valores propios reales y negativos)"
-        elif np.any(real_parts > 0) and np.any(real_parts < 0):
+        elif any(re > 0 for re in real_parts) and any(re < 0 for re in real_parts):
             return "Punto Silla (valores propios reales de signos opuestos)"
-        elif np.all(real_parts == 0):
+        elif all(re == 0 for re in real_parts):
             return "Centro o Nodo Degenerado (valores propios reales nulos o repetidos)"
         else:
             return "Otro tipo de equilibrio"
 
 def display_results(results):
+    import re
+    def remove_spaces_around_operators(expr_str):
+        expr_str = re.sub(r'\s*([\+\-\*/\^])\s*', r'\1', expr_str)
+        return expr_str
+
     for result in results:
         eq = result["equilibrium"]
         J = result["jacobian"]
-        eigenvalues = result["eigenvalues"]
-        eigenvectors = result["eigenvectors"]
-
-        print(f"\nPunto de equilibrio: {np.round(eq, 5)}")
-        print("Matriz Jacobiana:\n", np.round(J, 5))
-        print()
-        formatted_eigenvalues = [format_eigenvalue(ev) for ev in eigenvalues]
-        print("Valores propios:", formatted_eigenvalues)
-        print("Vectores propios:\n", np.round(eigenvectors, 5))
-
+        eigenvects = result["eigenvects"]
+        print("\nPunto de equilibrio:")
+        print(eq)
+        print("Matriz Jacobiana en el equilibrio:")
+        J_list = J.tolist()
+        processed_J_list = []
+        for row in J_list:
+            processed_row = []
+            for expr in row:
+                expr_str = str(expr).replace('**', '^')
+                expr_str = remove_spaces_around_operators(expr_str)
+                processed_row.append(expr_str)
+            processed_J_list.append(processed_row)
+        col_widths = [max(len(row[i]) for row in processed_J_list) for i in range(len(processed_J_list[0]))]
+        for row in processed_J_list:
+            row_str = ['{0:>{1}}'.format(row[i], col_widths[i]) for i in range(len(row))]
+            print('[ ' + '  '.join(row_str) + ' ]')
+        print("Valores propios:")
+        for ev, mult, vects in eigenvects:
+            ev_simplified = simplify(ev)
+            print(f"λ = {ev_simplified}")
+        eigenvalues = [ev for ev, mult, vects in eigenvects]
         classification = classify_equilibrium(eigenvalues)
         print("\nClasificación del sistema:", classification)
 
-def plot_phase_portrait(f_vectorized, g_vectorized, results, x_range=(-4, 2), y_range=(-2, 2), density=1.5):
-    x_vals = np.linspace(x_range[0], x_range[1], 400)
-    y_vals = np.linspace(y_range[0], y_range[1], 400)
+def plot_phase_portrait(f_vectorized, g_vectorized, results, x_range=(-3, 3), y_range=(-3, 3), density=1.5):
+    x_vals = np.linspace(float(x_range[0]), float(x_range[1]), 400)
+    y_vals = np.linspace(float(y_range[0]), float(y_range[1]), 400)
     X, Y = np.meshgrid(x_vals, y_vals)
     U = f_vectorized(X, Y)
     V = g_vectorized(X, Y)
-
     plt.figure(figsize=(10, 8))
     plt.streamplot(X, Y, U, V, color="blue", density=density, linewidth=1, arrowsize=1)
-
     if results:
-        eq_points = np.array([result["equilibrium"] for result in results])
+        eq_points = np.array([[float(eq[0]), float(eq[1])] for eq in [res["equilibrium"] for res in results]])
         plt.scatter(eq_points[:, 0], eq_points[:, 1], color="red", s=100, label="Puntos de equilibrio")
         for eq in eq_points:
             plt.text(eq[0], eq[1], f'({eq[0]:.2f}, {eq[1]:.2f})', color='black', fontsize=9)
-
     plt.title("Diagrama de Fase del Sistema No Lineal")
     plt.xlabel("x")
     plt.ylabel("y")
@@ -152,29 +155,18 @@ def plot_phase_portrait(f_vectorized, g_vectorized, results, x_range=(-4, 2), y_
     plt.ylim(y_range)
     plt.show()
 
-def run_system(f, g):
+def run_system(f, g, equilibria):
     f_vectorized, g_vectorized = vectorize_functions(f, g)
-
-    initial_guesses = [
-        [0, 0],
-        [1, 1],
-        [-1, -1],
-        [1, -1],
-        [-1, 1]
-    ]
-
-    equilibria = find_equilibria(f, g, initial_guesses)
-    print("Puntos de equilibrio encontrados:")
+    results = []
     for eq in equilibria:
-        print(np.round(eq, 5))
-    results = analyze_equilibria(equilibria, f, g)
-    display_results(results)
+        eq_numeric = (float(eq[0]), float(eq[1]))
+        results.append({"equilibrium": eq_numeric})
     plot_phase_portrait(f_vectorized, g_vectorized, results)
 
 def main():
-    x_function = x**3 - y**2 - 4 * x + 4
-    y_function = y - x
+    x_function = x ** 2 - 1
+    y_function = x
     process_system(x_function, y_function)
-
+ # TODO: Implementar que funcione cuando alguna de las dos es 0 y = 0 por ejemplo.
 if __name__ == "__main__":
     main()
