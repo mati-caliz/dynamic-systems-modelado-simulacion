@@ -1,6 +1,5 @@
 import sympy as sp
 import numpy as np
-import matplotlib.pyplot as plt
 from sympy import symbols, Matrix, lambdify, solve, simplify, sympify, pprint, nsimplify, S, Rational, Expr, exp
 from jacobian import compute_jacobian_symbolic, compute_jacobian_at_equilibrium
 from equilibria import find_equilibria_symbolic, analyze_equilibria
@@ -138,7 +137,6 @@ class DynamicSystem:
             [self.f_sym.coeff(var) for var in self.variables],
             [self.g_sym.coeff(var) for var in self.variables]
         ])
-        eigenvals = A.eigenvals()
         eigenvects = A.eigenvects()
         c = symbols('c1:%d' % (len(eigenvects) * A.shape[0] + 1))
         t = symbols('t')
@@ -160,8 +158,8 @@ class DynamicSystem:
 
     def lambdify_functions(self):
         vars = (self.x, self.y) + tuple(self.parameters)
-        self.f_num = lambdify(vars, self.f_sym, modules='numpy')
-        self.g_num = lambdify(vars, self.g_sym, modules='numpy')
+        self.f_num = lambdify(vars, self.f_sym, modules=['numpy', {'I': 0}])
+        self.g_num = lambdify(vars, self.g_sym, modules=['numpy', {'I': 0}])
 
     def vectorize_functions(self):
         f_vectorized = np.vectorize(self.f_num)

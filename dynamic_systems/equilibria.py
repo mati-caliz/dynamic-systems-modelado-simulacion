@@ -3,17 +3,6 @@ import numpy as np  # Importar numpy
 from jacobian import compute_jacobian_at_equilibrium  # Importar la función necesaria
 
 def find_equilibria_symbolic(f_sym, g_sym, parameters):
-    """
-    Encuentra los puntos de equilibrio del sistema dado.
-
-    Args:
-        f_sym (sympy expression): Expresión simbólica de f(x, y).
-        g_sym (sympy expression): Expresión simbólica de g(x, y).
-        parameters (set): Conjunto de parámetros simbólicos.
-
-    Returns:
-        list: Lista de puntos de equilibrio encontrados.
-    """
     x, y = symbols('x y')
     variables = (x, y)
     solutions = solve([f_sym, g_sym], variables, dict=True, rational=True)
@@ -26,21 +15,7 @@ def find_equilibria_symbolic(f_sym, g_sym, parameters):
     return equilibria
 
 def analyze_equilibria(equilibria, f_sym, g_sym, parameters):
-    """
-    Analiza los puntos de equilibrio, calcula la matriz Jacobiana,
-    valores propios y vectores propios.
-
-    Args:
-        equilibria (list): Lista de puntos de equilibrio.
-        f_sym (sympy expression): Expresión simbólica de f(x, y).
-        g_sym (sympy expression): Expresión simbólica de g(x, y).
-        parameters (set): Conjunto de parámetros simbólicos.
-
-    Returns:
-        list: Lista de resultados del análisis para cada equilibrio.
-    """
     results = []
-    x, y = symbols('x y')
     for eq in equilibria:
         if not isinstance(eq[0], Expr) or not isinstance(eq[1], Expr):
             print(f"\nEl equilibrio {eq} no es una expresión simbólica válida y se omitirá.")
@@ -51,7 +26,6 @@ def analyze_equilibria(equilibria, f_sym, g_sym, parameters):
         J = compute_jacobian_at_equilibrium(f_sym, g_sym, eq)
         eigenvals = J.eigenvals()
         eigenvects = J.eigenvects()
-        # Calcular valores y vectores propios numéricos
         J_numeric = np.array(J.evalf(), dtype=float)
         eigvals_num, eigvecs_num = np.linalg.eig(J_numeric)
         results.append({

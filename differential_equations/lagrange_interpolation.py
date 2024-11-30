@@ -1,50 +1,47 @@
 import numpy as np
 import matplotlib.pyplot as plt
-from sympy import symbols, simplify, expand, Rational, pretty
+from tabulate import tabulate
+import sympy as sp
 
-def interpolacion_lagrange(puntos, cantidad_puntos=100):
-    x = symbols('x')
-    polinomio = 0
-    
+
+def lagrange_interpolation(points, num_points=100, precision=5):
+    x = sp.symbols('x')
+    polynomial = 0
     print("Construcción del polinomio de Lagrange:")
-    for i in range(len(puntos)):
+    for i in range(len(points)):
         li = 1
-        numeradores = []
-        denominadores = []
-        
-        for j in range(len(puntos)):
+        numerators = []
+        denominators = []
+        for j in range(len(points)):
             if i != j:
-                numerador = f"(x - {puntos[j][0]})"
-                denominador = f"({puntos[i][0]} - {puntos[j][0]})"
-                numeradores.append(numerador)
-                denominadores.append(denominador)
-                li *= (x - puntos[j][0]) / (puntos[i][0] - puntos[j][0])
-        
-        numerador_planteo = ' * '.join(numeradores)
-        denominador_planteo = ' * '.join(denominadores)
-        
+                numerator = f"(x - {round(points[j][0], precision)})"
+                denominator = f"({round(points[i][0], precision)} - {round(points[j][0], precision)})"
+                numerators.append(numerator)
+                denominators.append(denominator)
+                li *= (x - points[j][0]) / (points[i][0] - points[j][0])
+        numerator_str = ' * '.join(numerators)
+        denominator_str = ' * '.join(denominators)
+
         print(f"\nTérmino l_{i}(x):")
-        print(f"   {numerador_planteo}")
-        print(f"  {'-' * max(len(numerador_planteo), len(denominador_planteo))}")
-        print(f"   {denominador_planteo}")
-        print(f"\n\n{pretty(simplify(li))}")
-        polinomio += Rational(puntos[i][1]) * li
+        print(f"   {numerator_str}")
+        print(f"  {'-' * max(len(numerator_str), len(denominator_str))}")
+        print(f"   {denominator_str}")
+        print(f"\n\n{sp.pretty(sp.simplify(li), use_unicode=True)}")
+        polynomial += sp.Rational(points[i][1]) * li
+    expanded_polynomial = sp.expand(polynomial)
+    print(f"\nPolinomio de Lagrange: \n{sp.pretty(expanded_polynomial, use_unicode=True)}")
+    x_min = min(p[0] for p in points)
+    x_max = max(p[0] for p in points)
+    x_eval = np.linspace(x_min, x_max, num_points)
+    polynomial_func = np.vectorize(lambda x_val: expanded_polynomial.evalf(subs={x: x_val}))
+    y_vals = polynomial_func(x_eval)
+    plot_lagrange(points, x_eval, y_vals)
 
-    polinomio_expandido = expand(polinomio)
-    print(f"\nPolinomio de Lagrange: \n{pretty(polinomio_expandido)}")
-
-    _min = min(punto[0] for punto in puntos)
-    x_max = max(punto[0] for punto in puntos)
-    puntos_evaluacion_x = np.linspace(_min, x_max, cantidad_puntos)
-    polinomio_func = np.vectorize(lambda x_val: polinomio_expandido.evalf(subs={x: x_val}))
-    valores_y = polinomio_func(puntos_evaluacion_x)
-    graficar_lagrange(puntos, puntos_evaluacion_x, valores_y)
-
-def graficar_lagrange(puntos, puntos_evaluacion_x, valores_y):
-    x_nodos = [p[0] for p in puntos]
-    y_nodos = [p[1] for p in puntos]
-    plt.plot(x_nodos, y_nodos, 'o', label='Nodos', color='red')
-    plt.plot(puntos_evaluacion_x, valores_y, '-', label='Interpolación de Lagrange', color='blue')
+def plot_lagrange(points, x_eval, y_vals):
+    x_nodes = [p[0] for p in points]
+    y_nodes = [p[1] for p in points]
+    plt.plot(x_nodes, y_nodes, 'o', label='Nodos', color='red')
+    plt.plot(x_eval, y_vals, '-', label='Interpolación de Lagrange', color='blue')
     plt.axhline(0, color='black', linewidth=0.5)
     plt.axvline(0, color='black', linewidth=0.5)
     plt.grid(color='gray', linestyle='--', linewidth=0.5)
@@ -53,3 +50,12 @@ def graficar_lagrange(puntos, puntos_evaluacion_x, valores_y):
     plt.ylabel('y')
     plt.legend()
     plt.show()
+
+def main():
+    points = [(0, 1), (1, 3), (2, 7)]
+    num_points = 100
+    precision = 5
+    lagrange_interpolation(points, num_points, precision)
+
+if __name__ == "__main__":
+    main()

@@ -25,7 +25,6 @@ def newton_raphson(x, f_expr, initial_value, max_iterations=100, precision=8):
         abs_error = abs(x_new - x_current)
         rel_error = abs((x_new - x_current) * 100 / x_new)
 
-        # Impresión detallada de las primeras tres iteraciones
         if iteration < 3:
             print(f"\nIteración {iteration + 1}:")
             print(f"f({x_current}) = {round(f_current, precision)}")
@@ -51,7 +50,7 @@ def newton_raphson(x, f_expr, initial_value, max_iterations=100, precision=8):
                 floatfmt=f".{precision}f",
                 tablefmt="grid"
             ))
-            graficar(f, root=x_new, precision=precision, iterations=iterations)
+            plot_function(f, root=x_new, precision=precision, iterations=iterations)
             print(f"\nRaíz encontrada: {x_new:.{precision}f}")
             return x_new
 
@@ -60,10 +59,9 @@ def newton_raphson(x, f_expr, initial_value, max_iterations=100, precision=8):
     raise ValueError("El método no convergió dentro del número máximo de iteraciones.")
 
 
-def graficar(fx, root, precision, iterations):
-    # Renombrar 'range' a 'rango' para evitar conflictos con la función incorporada
-    rango = 5
-    x_vals = np.linspace(root - rango, root + rango, 400)
+def plot_function(fx, root, precision, iterations):
+    range_ = 5
+    x_vals = np.linspace(root - range_, root + range_, 400)
     y_vals = fx(x_vals)
 
     plt.figure(figsize=(12, 8))

@@ -4,70 +4,68 @@ from tabulate import tabulate
 import sympy as sp
 
 
-def secante(x, f_expr, x_inicial, x_final, tolerancia=1e-6, max_iteraciones=100, precision=5):
+def secant(x, f_expr, x_initial, x_final, tolerance=1e-6, max_iterations=100, precision=5):
     f = sp.lambdify(x, f_expr, 'numpy')
-    iteraciones = []
+    iterations = []
     secant_lines = []
-    x_values = [x_inicial, x_final]
+    x_values = [x_initial, x_final]
 
-    for i in range(max_iteraciones):
-        f_x_inicial = f(x_inicial)
+    for i in range(max_iterations):
+        f_x_initial = f(x_initial)
         f_x_final = f(x_final)
-        denominator = f_x_final - f_x_inicial
+        denominator = f_x_final - f_x_initial
 
         if denominator == 0:
             raise ZeroDivisionError("Denominador cero durante la iteración.")
 
-        x_nuevo = x_final - f_x_final * (x_final - x_inicial) / denominator
-        error_abs = abs(x_nuevo - x_final)
-        error_rel = abs((x_nuevo - x_final) * 100 / x_nuevo)
+        x_new = x_final - f_x_final * (x_final - x_initial) / denominator
+        abs_error = abs(x_new - x_final)
+        rel_error = abs((x_new - x_final) * 100 / x_new)
 
-        iteraciones.append([
+        iterations.append([
             i + 1,
-            round(x_inicial, precision),
-            round(f_x_inicial, precision),
-            round(x_nuevo, precision),
-            round(error_abs, precision),
-            f"{round(error_rel, 2)} %"
+            round(x_initial, precision),
+            round(f_x_initial, precision),
+            round(x_new, precision),
+            round(abs_error, precision),
+            f"{round(rel_error, 2)} %"
         ])
-        secant_lines.append(((x_inicial, f_x_inicial), (x_final, f_x_final)))
-        x_values.append(x_nuevo)
+        secant_lines.append(((x_initial, f_x_initial), (x_final, f_x_final)))
+        x_values.append(x_new)
 
-        # Impresión detallada de las primeras 3 iteraciones
         if i < 3:
             print(f"\nIteración {i + 1}:")
             print(f"x_{i + 1} = {x_final}")
             print(f"f(x_{i + 1}) = {f_x_final}")
-            print(f"x_nuevo = {x_final} - ({f_x_final} * ({x_final} - {x_inicial}) / ({f_x_final} - {f_x_inicial})) = {x_nuevo}")
+            print(f"x_nuevo = {x_final} - ({f_x_final} * ({x_final} - {x_initial}) / ({f_x_final} - {f_x_initial})) = {x_new}")
 
-        if abs(x_nuevo - x_final) < tolerancia:
+        if abs(x_new - x_final) < tolerance:
             print("\nResumen de Iteraciones:")
-            print(tabulate(iteraciones, headers=["Iteración", "x", "f(x)", "Resultado", "Error abs", "Error rel"], tablefmt="grid"))
-            graficar(f, raiz=x_nuevo, precision=precision, secant_lines=secant_lines, x_values=x_values)
-            print(f"\nRaíz encontrada: {x_nuevo:.{precision}f}")
-            return x_nuevo
+            print(tabulate(iterations, headers=["Iteración", "x", "f(x)", "Resultado", "Error abs", "Error rel"], tablefmt="grid"))
+            plot_function(f, root=x_new, precision=precision, secant_lines=secant_lines, x_values=x_values)
+            print(f"\nRaíz encontrada: {x_new:.{precision}f}")
+            return x_new
 
-        x_inicial, x_final = x_final, x_nuevo
+        x_initial, x_final = x_final, x_new
 
     raise ValueError("El método no convergió o faltan iteraciones.")
 
 
-def graficar(fx, raiz, precision, secant_lines, x_values):
-    # Determinar el rango de la gráfica basado en los valores de x utilizados
+def plot_function(fx, root, precision, secant_lines, x_values):
     min_x = min(x_values)
     max_x = max(x_values)
     padding = (max_x - min_x) * 0.2 if max_x != min_x else 1
-    rango_min = min_x - padding
-    rango_max = max_x + padding
+    range_min = min_x - padding
+    range_max = max_x + padding
 
-    x_vals = np.linspace(rango_min, rango_max, 400)
+    x_vals = np.linspace(range_min, range_max, 400)
     y_vals = fx(x_vals)
 
     plt.figure(figsize=(12, 8))
     plt.plot(x_vals, y_vals, label='f(x)', color='blue')
     plt.axhline(0, color='black', linewidth=0.5)
-    plt.axvline(raiz, color='red', linestyle='--', label=f'Raíz aproximada: {raiz:.{precision}f}')
-    plt.scatter(raiz, 0, color='red', zorder=5)
+    plt.axvline(root, color='red', linestyle='--', label=f'Raíz aproximada: {root:.{precision}f}')
+    plt.scatter(root, 0, color='red', zorder=5)
 
     colors = plt.cm.viridis(np.linspace(0, 1, len(secant_lines)))
 
@@ -87,13 +85,13 @@ def graficar(fx, raiz, precision, secant_lines, x_values):
 def main():
     x = sp.symbols('x')
     f_x = x**3 - 2*x - 5
-    x_inicial = 2
+    x_initial = 2
     x_final = 3
-    tolerancia = 1e-6
-    max_iteraciones = 100
+    tolerance = 1e-6
+    max_iterations = 100
     precision = 5
 
-    secante(x, f_x, x_inicial, x_final, tolerancia, max_iteraciones, precision)
+    secant(x, f_x, x_initial, x_final, tolerance, max_iterations, precision)
 
 
 if __name__ == "__main__":

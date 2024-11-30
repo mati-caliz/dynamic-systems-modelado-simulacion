@@ -1,38 +1,60 @@
 import numpy as np
 import matplotlib.pyplot as plt
-from scipy.misc import derivative
 from tabulate import tabulate
+import sympy as sp
 
- 
-def punto_fijo(g, valor_inicial, max_iteraciones=100, tolerancia=1e-6, precision=5):
-    x = valor_inicial
-    if(abs(derivative(g, x, dx=tolerancia)) >= 1):
-        raise ValueError("No cumple la condición de convergencia")
-    
-    iteraciones = []
-    for i in range(max_iteraciones):
-        x_nuevo = g(x)
-        error_abs = abs(x_nuevo - x)
-        error_rel = abs((x_nuevo - x)*100/x_nuevo)
-        iteraciones.append([i+1, round(x, precision), round(x_nuevo, precision), round(error_abs, precision), f"{round(error_rel, 2)} %)"])
-        if error_abs < tolerancia:
-            print(tabulate(iteraciones, headers=["Iteración", "x", "g(x)", "Error abs", "Error rel"], tablefmt="grid"))
-            return x_nuevo
-        x = x_nuevo
-    raise ValueError("El método no convergió o faltan iteraciones.")
+def fixed_point(initial_value, f_sym, g_sym, max_iterations=100, tolerance=1e-6, precision=5):
+    x_sym = sp.symbols('x')
+    g = sp.lambdify(x_sym, g_sym, 'numpy')
+    f = sp.lambdify(x_sym, f_sym, 'numpy')
+    h = 1e-5
+    deriv = (g(initial_value + h) - g(initial_value - h)) / (2 * h)
+    if abs(deriv) >= 1:
+        raise ValueError("No cumple la condición de convergencia (|g'(x)| < 1)")
+    x = initial_value
+    iterations = []
+    for i in range(max_iterations):
+        x_new = g(x)
+        abs_error = abs(x_new - x)
+        rel_error = abs((x_new - x) * 100 / x_new) if x_new != 0 else float('inf')
+        iterations.append([
+            i + 1,
+            round(x, precision),
+            round(x_new, precision),
+            round(abs_error, precision),
+            f"{round(rel_error, 2)} %"
+        ])
+        if abs_error < tolerance:
+            print(tabulate(
+                iterations,
+                headers=["Iteración", "x", "g(x)", "Error Absoluto", "Error Relativo"],
+                tablefmt="grid"
+            ))
+            x_vals = np.linspace(0, 2, 400)
+            y_vals = f(x_vals)
+            plt.plot(x_vals, y_vals, label='$f(x)$')
+            plt.plot(x_new, f(x_new), 'ro', label=f'Raíz aproximada: x = {x_new:.5f}')
+            plt.axhline(0, color='black', linewidth=0.5)
+            plt.axvline(0, color='black', linewidth=0.5)
+            plt.grid(color='gray', linestyle='--', linewidth=0.5)
+            plt.title('Método del Punto Fijo')
+            plt.xlabel('$x$')
+            plt.ylabel('$f(x)$')
+            plt.legend()
+            plt.show()
+            return x_new
+        x = x_new
+    raise ValueError("El método no convergió dentro del número máximo de iteraciones.")
 
+def main():
+    x = sp.symbols('x')
+    f_sym = x**2 - 2
+    g_sym = (x + 2 / x) / 2
+    initial_value = 1.0
+    max_iterations = 100
+    tolerance = 1e-6
+    precision = 5
+    fixed_point(initial_value, f_sym, g_sym, max_iterations, tolerance, precision)
 
-def graficar(f, raiz):
-    x_vals = np.linspace(0, 2, 400)
-    y_vals = f(x_vals)
-    
-    plt.plot(x_vals, y_vals, label='$f(x)')
-    plt.plot(raiz, f(raiz), 'ro', label=f'Raíz aproximada: x = {raiz:.5f}')
-    plt.axhline(0, color='black',linewidth=0.5)
-    plt.axvline(0, color='black',linewidth=0.5)
-    plt.grid(color = 'gray', linestyle = '--', linewidth = 0.5)
-    plt.title('Método del Punto Fijo')
-    plt.xlabel('$x$')
-    plt.ylabel('$f(x)$')
-    plt.legend()
-    plt.show()
+if __name__ == "__main__":
+    main()

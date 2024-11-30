@@ -6,16 +6,6 @@ import sympy as sp
 from sympy import symbols, solve
 
 def generate_bifurcation_diagram(f_sym, g_sym, parameter, param_range, variables=(sp.Symbol('x'), sp.Symbol('y'))):
-    """
-    Genera un diagrama de bifurcación para el sistema dado.
-
-    Args:
-        f_sym (sympy expression): Expresión simbólica de f(x, y).
-        g_sym (sympy expression): Expresión simbólica de g(x, y).
-        parameter (sympy Symbol): Parámetro para el cual se genera el diagrama.
-        param_range (tuple): Rango de valores del parámetro.
-        variables (tuple): Variables simbólicas, típicamente (x, y).
-    """
     equilibria_values = []
     param_values = np.linspace(param_range[0], param_range[1], 200)
     for param_val in param_values:
