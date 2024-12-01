@@ -5,6 +5,8 @@ from jacobian import compute_jacobian_at_equilibrium  # Importar la función nec
 def find_equilibria_symbolic(f_sym, g_sym, parameters):
     x, y = symbols('x y')
     variables = (x, y)
+    f_sym = simplify(f_sym)
+    g_sym = simplify(g_sym)
     solutions = solve([f_sym, g_sym], variables, dict=True, rational=True)
     equilibria = []
     if solutions:
