@@ -1,27 +1,28 @@
+# dynamic_system.py
 import sympy as sp
 import numpy as np
-from sympy import symbols, Matrix, lambdify, solve, expand, sympify, pprint, nsimplify, exp
-from jacobian import compute_jacobian_symbolic
-from equilibria import find_equilibria_symbolic, analyze_equilibria
+from sympy import symbols, Matrix, lambdify, solve, expand, pprint, nsimplify, exp
 from plotting import plot_phase_portrait, display_nullclines
 from bifurcation import generate_bifurcation_diagram
+from utils import ensure_sympy_expression, classify_equilibrium, format_eigenvalue
+from jacobian import compute_jacobian_symbolic
+from equilibria import find_equilibria_symbolic, analyze_equilibria
+
 
 class DynamicSystem:
     def __init__(self, f_sym, g_sym, parameters=None):
         self.x, self.y = sp.symbols('x y')
         self.parameters = parameters if parameters else set()
-        self.f_sym = self.ensure_sympy_expression(f_sym)
-        self.g_sym = self.ensure_sympy_expression(g_sym)
+        self.f_sym = ensure_sympy_expression(f_sym)
+        self.g_sym = ensure_sympy_expression(g_sym)
         self.variables = (self.x, self.y)
         self.jacobian_matrix = None
         self.equilibria = []
         self.nullclines = []
         self.results = []
-
-    def ensure_sympy_expression(self, func):
-        expr = sympify(func, evaluate=False)
-        expr = nsimplify(expr, rational=True)
-        return expr
+        self.general_solution = (None, None)
+        self.f_num = None
+        self.g_num = None
 
     def run_full_analysis(self):
         self.compute_jacobian()
@@ -37,13 +38,13 @@ class DynamicSystem:
             print("No se encontraron puntos de equilibrio.")
         self.compute_general_solution()
         self.display_general_solution()
-        print("\nNuclinas del sistema:")
+        print("\nNulclinas del sistema:")
         display_nullclines(self.nullclines)
         self.lambdify_functions()
         if self.parameters:
             param = next(iter(self.parameters))
             generate_bifurcation_diagram(self.f_sym, self.g_sym, param, param_range=(-2, 2))
-        if not self.parameters:
+        else:
             self.plot_phase_portrait()
 
     def compute_jacobian(self):
@@ -59,18 +60,18 @@ class DynamicSystem:
         nullclines = []
         f_nullcline = solve(self.f_sym, self.y)
         if f_nullcline:
-            nullclines.append({'variable': self.y, 'solutions': f_nullcline, 'label': "Nuclina x'"})
+            nullclines.append({'variable': self.y, 'solutions': f_nullcline, 'label': "Nulclina x'"})
         else:
             f_nullcline = solve(self.f_sym, self.x)
             if f_nullcline:
-                nullclines.append({'variable': self.x, 'solutions': f_nullcline, 'label': "Nuclina x'"})
+                nullclines.append({'variable': self.x, 'solutions': f_nullcline, 'label': "Nulclina x'"})
         g_nullcline = solve(self.g_sym, self.y)
         if g_nullcline:
-            nullclines.append({'variable': self.y, 'solutions': g_nullcline, 'label': "Nuclina y'"})
+            nullclines.append({'variable': self.y, 'solutions': g_nullcline, 'label': "Nulclina y'"})
         else:
             g_nullcline = solve(self.g_sym, self.x)
             if g_nullcline:
-                nullclines.append({'variable': self.x, 'solutions': g_nullcline, 'label': "Nuclina y'"})
+                nullclines.append({'variable': self.x, 'solutions': g_nullcline, 'label': "Nulclina y'"})
         self.nullclines = nullclines
 
     def analyze_equilibria(self):
@@ -88,50 +89,19 @@ class DynamicSystem:
             pprint(J)
             print("Valores propios:")
             for ev in eigenvals:
-                ev_simplified = nsimplify(ev, rational=True)
-                ev_str = str(ev_simplified).replace('I', 'i')
+                ev_str = format_eigenvalue(ev)
                 print(f"λ = {ev_str}")
             print("Vectores propios:")
             for ev, mult, vects in eigenvects:
-                ev_simplified = nsimplify(ev, rational=True)
-                ev_str = str(ev_simplified).replace('I', 'i')
+                ev_str = format_eigenvalue(ev)
                 for vect in vects:
                     vect_simplified = vect.applyfunc(lambda x: nsimplify(x, rational=True))
                     vect_components = [str(comp).replace('I', 'i') for comp in vect_simplified]
                     vect_str = f"({', '.join(vect_components)})"
                     print(f"Vector propio asociado a λ = {ev_str}:\n{vect_str}")
             eigenvalues = list(eigenvals.keys())
-            classification = self.classify_equilibrium(eigenvalues)
+            classification = classify_equilibrium(eigenvalues)
             print("\nClasificación del sistema:", classification)
-
-    def classify_equilibrium(self, eigenvalues):
-        real_parts = [ev.as_real_imag()[0] for ev in eigenvalues]
-        imag_parts = [ev.as_real_imag()[1] for ev in eigenvalues]
-        real_positive = [re.is_positive for re in real_parts]
-        real_negative = [re.is_negative for re in real_parts]
-        imag_nonzero = [im.is_zero == False for im in imag_parts]
-        if None in real_positive or None in real_negative or None in imag_nonzero:
-            return "No se puede determinar la clasificación del equilibrio debido a valores propios simbólicos."
-        if all(im for im in imag_nonzero):
-            if all(re == True for re in real_positive):
-                return "Foco Inestable (valores propios complejos con parte real positiva)"
-            elif all(re == True for re in real_negative):
-                return "Foco Estable (valores propios complejos con parte real negativa)"
-            elif all(re == False for re in real_positive + real_negative):
-                return "Centro (valores propios puramente imaginarios)"
-            else:
-                return "Espiral Silla (valores propios complejos con partes reales de signos opuestos)"
-        else:
-            if all(re == True for re in real_positive):
-                return "Nodo Inestable (valores propios reales y positivos)"
-            elif all(re == True for re in real_negative):
-                return "Nodo Estable (valores propios reales y negativos)"
-            elif any(re == True for re in real_positive) and any(re == True for re in real_negative):
-                return "Punto Silla (valores propios reales de signos opuestos)"
-            elif all(re == False for re in real_positive + real_negative):
-                return "Centro o Nodo Degenerado (valores propios reales nulos o repetidos)"
-            else:
-                return "Otro tipo de equilibrio"
 
     def compute_general_solution(self):
         A = Matrix([
@@ -150,7 +120,6 @@ class DynamicSystem:
                 sol_x += term[0]
                 sol_y += term[1]
                 idx += 1
-        # Usar expand en lugar de simplify para descomponer los productos
         self.general_solution = (expand(sol_x), expand(sol_y))
 
     def display_general_solution(self):
@@ -174,7 +143,6 @@ class DynamicSystem:
             f_vectorized,
             g_vectorized,
             self.equilibria,
-            self.parameters,
             results=self.results,
             nullclines=self.nullclines
         )

@@ -10,6 +10,7 @@ def main():
         f_sym=f_x,
         g_sym=g_x
     )
+
     system.run_full_analysis()
 
 
