@@ -2,9 +2,9 @@ import sympy as sp
 from dynamic_system import DynamicSystem
 
 def main():
-    x, y = sp.symbols('x y')
-    f_x = x**2 + y**2 - 1
-    g_x = y - x
+    x, y, a = sp.symbols('x y a')
+    f_x = 3/2 * x + 1/2 * y
+    g_x = 1/2 * x + 3/2 * y
 
     system = DynamicSystem(
         f_sym=f_x,

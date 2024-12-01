@@ -1,7 +1,7 @@
 import sympy as sp
 import numpy as np
-from sympy import symbols, Matrix, lambdify, solve, simplify, sympify, pprint, nsimplify, S, Rational, Expr, exp
-from jacobian import compute_jacobian_symbolic, compute_jacobian_at_equilibrium
+from sympy import symbols, Matrix, lambdify, solve, expand, sympify, pprint, nsimplify, exp
+from jacobian import compute_jacobian_symbolic
 from equilibria import find_equilibria_symbolic, analyze_equilibria
 from plotting import plot_phase_portrait, display_nullclines
 from bifurcation import generate_bifurcation_diagram
@@ -40,10 +40,11 @@ class DynamicSystem:
         print("\nNuclinas del sistema:")
         display_nullclines(self.nullclines)
         self.lambdify_functions()
-        self.plot_phase_portrait()
         if self.parameters:
             param = next(iter(self.parameters))
             generate_bifurcation_diagram(self.f_sym, self.g_sym, param, param_range=(-2, 2))
+        if not self.parameters:
+            self.plot_phase_portrait()
 
     def compute_jacobian(self):
         self.jacobian_matrix = compute_jacobian_symbolic(self.f_sym, self.g_sym, self.variables)
@@ -149,7 +150,8 @@ class DynamicSystem:
                 sol_x += term[0]
                 sol_y += term[1]
                 idx += 1
-        self.general_solution = (simplify(sol_x), simplify(sol_y))
+        # Usar expand en lugar de simplify para descomponer los productos
+        self.general_solution = (expand(sol_x), expand(sol_y))
 
     def display_general_solution(self):
         print("\nSolución general del sistema:")

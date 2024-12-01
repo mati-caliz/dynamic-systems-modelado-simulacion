@@ -24,8 +24,6 @@ def plot_phase_portrait(f_vectorized, g_vectorized, equilibria, parameters, x_ra
     X, Y = np.meshgrid(x_vals, y_vals)
     U = f_vectorized(X, Y, **param_values)
     V = g_vectorized(X, Y, **param_values)
-
-    # Reemplazar valores complejos con NaN y extraer la parte real
     U = np.where(np.iscomplex(U), np.nan, U.real)
     V = np.where(np.iscomplex(V), np.nan, V.real)
 
@@ -97,9 +95,7 @@ def plot_phase_portrait(f_vectorized, g_vectorized, equilibria, parameters, x_ra
                     print(f"Error al graficar nullcline '{label}: {expr}': {e}")
                     continue
 
-    # Graficar resultados (trayectorias)
     if results is not None:
-        plotted_vectors = set()
         for result in results:
             eq = result["equilibrium"]
             if hasattr(eq[0], 'free_symbols') or hasattr(eq[1], 'free_symbols'):
@@ -113,25 +109,29 @@ def plot_phase_portrait(f_vectorized, g_vectorized, equilibria, parameters, x_ra
                         eq_numeric = (float(eq[0]), float(eq[1]))
 
                     eigenvals = result["eigenvals"]
-                    if any(ev.is_complex for ev in eigenvals):
-                        print(f"Saltando vectores propios para el equilibrio {eq} debido a valores propios complejos.")
-                        continue
-
                     eigenvects = result["eigenvects"]
+
                     for ev, mult, vects in eigenvects:
                         for vect in vects:
+                            # Solo graficar vectores asociados a valores propios reales
+                            if not ev.is_real:
+                                print(f"Saltando autovector para λ = {ev} porque es complejo.")
+                                continue
+
                             vect_simplified = vect.applyfunc(lambda x: nsimplify(x, rational=True))
                             vect_numeric = np.array([float(comp.evalf()) for comp in vect_simplified])
                             eigvec = vect_numeric / np.linalg.norm(vect_numeric)
-                            scale = (x_range[1] - x_range[0]) / 2
-                            x_line = [eq_numeric[0] - eigvec[0] * scale, eq_numeric[0] + eigvec[0] * scale]
-                            y_line = [eq_numeric[1] - eigvec[1] * scale, eq_numeric[1] + eigvec[1] * scale]
-                            label = f"Autovector asociado a λ = {ev}"
-                            if label not in plotted_vectors:
-                                plt.plot(x_line, y_line, '-', linewidth=2, label=label)
-                                plotted_vectors.add(label)
-                            else:
-                                plt.plot(x_line, y_line, '-', linewidth=2)
+                            scale = (x_range[1] - x_range[0]) / 4  # Ajustar escala según el rango
+                            # Definir puntos para el vector
+                            start_point = np.array(eq_numeric)
+                            end_point = start_point + eigvec * scale
+                            # Graficar el vector como una flecha
+                            plt.arrow(start_point[0], start_point[1],
+                                      eigvec[0]*scale, eigvec[1]*scale,
+                                      head_width=0.05*scale, head_length=0.1*scale, fc='green', ec='green',
+                                      length_includes_head=True)
+                            # Añadir etiqueta cerca del final de la flecha
+                            plt.text(end_point[0], end_point[1], f'λ={ev}', color='green', fontsize=9)
                 except (TypeError, ValueError) as e:
                     print(f"Error al procesar resultados: {e}")
                     continue

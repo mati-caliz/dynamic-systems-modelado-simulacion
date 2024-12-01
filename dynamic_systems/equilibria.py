@@ -28,7 +28,7 @@ def analyze_equilibria(equilibria, f_sym, g_sym, parameters):
         J = compute_jacobian_at_equilibrium(f_sym, g_sym, eq)
         eigenvals = J.eigenvals()
         eigenvects = J.eigenvects()
-        J_numeric = np.array(J.evalf(), dtype=float)
+        J_numeric = np.array(J.evalf(), dtype=complex)
         eigvals_num, eigvecs_num = np.linalg.eig(J_numeric)
         results.append({
             "equilibrium": eq,
