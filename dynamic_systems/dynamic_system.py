@@ -38,7 +38,7 @@ class DynamicSystem:
             print("No se encontraron puntos de equilibrio.")
         self.compute_general_solution()
         self.display_general_solution()
-        print("\nNulclinas del sistema:")
+        print("\nNuclinas del sistema:")
         display_nullclines(self.nullclines)
         self.lambdify_functions()
         if self.parameters:
@@ -60,18 +60,18 @@ class DynamicSystem:
         nullclines = []
         f_nullcline = solve(self.f_sym, self.y)
         if f_nullcline:
-            nullclines.append({'variable': self.y, 'solutions': f_nullcline, 'label': "Nulclina x'"})
+            nullclines.append({'variable': self.y, 'solutions': f_nullcline, 'label': "Nuclina x'"})
         else:
             f_nullcline = solve(self.f_sym, self.x)
             if f_nullcline:
-                nullclines.append({'variable': self.x, 'solutions': f_nullcline, 'label': "Nulclina x'"})
+                nullclines.append({'variable': self.x, 'solutions': f_nullcline, 'label': "Nuclina x'"})
         g_nullcline = solve(self.g_sym, self.y)
         if g_nullcline:
-            nullclines.append({'variable': self.y, 'solutions': g_nullcline, 'label': "Nulclina y'"})
+            nullclines.append({'variable': self.y, 'solutions': g_nullcline, 'label': "Nuclina y'"})
         else:
             g_nullcline = solve(self.g_sym, self.x)
             if g_nullcline:
-                nullclines.append({'variable': self.x, 'solutions': g_nullcline, 'label': "Nulclina y'"})
+                nullclines.append({'variable': self.x, 'solutions': g_nullcline, 'label': "Nuclina y'"})
         self.nullclines = nullclines
 
     def analyze_equilibria(self):

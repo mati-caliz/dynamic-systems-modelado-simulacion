@@ -3,6 +3,7 @@ import matplotlib.pyplot as plt
 import sympy as sp
 from sympy import nsimplify
 
+
 def display_nullclines(nullclines):
     for nullcline in nullclines:
         variable = nullcline['variable']
@@ -11,6 +12,7 @@ def display_nullclines(nullclines):
         print(f"{label}:")
         for expr in solutions:
             print(f"  {variable} = {expr}")
+
 
 def plot_phase_portrait(f_vectorized, g_vectorized, equilibria, x_range=(-3, 3), y_range=(-3, 3),
                         density=1.5, results=None, nullclines=None):
@@ -49,25 +51,29 @@ def plot_phase_portrait(f_vectorized, g_vectorized, equilibria, x_range=(-3, 3),
                     continue
                 try:
                     if variable == sp.Symbol('y'):
-                        y_nullcline = sp.lambdify(sp.Symbol('x'), expr, modules='numpy')
-                        y_plot = y_nullcline(x_vals_plot)
-                        y_plot = y_plot.real if np.isrealobj(y_plot) else np.nan * np.ones_like(y_plot)
-                        label_full = f"{label}: {variable} = {expr}"
-                        if label_full not in labels_plotted:
-                            plt.plot(x_vals_plot, y_plot, '--', label=label_full)
-                            labels_plotted.add(label_full)
-                        else:
-                            plt.plot(x_vals_plot, y_plot, '--')
+                        independent_var = sp.Symbol('x')
+                        dependent_var = 'y'
+                        plot_x = x_vals_plot
+                        plot_y = sp.lambdify(independent_var, expr, modules='numpy')(plot_x)
                     else:
-                        x_nullcline = sp.lambdify(sp.Symbol('y'), expr, modules='numpy')
-                        x_plot = x_nullcline(y_vals_plot)
-                        x_plot = x_plot.real if np.isrealobj(x_plot) else np.nan * np.ones_like(x_plot)
-                        label_full = f"{label}: {variable} = {expr}"
-                        if label_full not in labels_plotted:
-                            plt.plot(x_plot, y_vals_plot, '--', label=label_full)
-                            labels_plotted.add(label_full)
-                        else:
-                            plt.plot(x_plot, y_vals_plot, '--')
+                        independent_var = sp.Symbol('y')
+                        dependent_var = 'x'
+                        plot_y = y_vals_plot
+                        plot_x = sp.lambdify(independent_var, expr, modules='numpy')(plot_y)
+
+                    if np.isrealobj(plot_x if dependent_var == 'x' else plot_y):
+                        plot_x = plot_x.real
+                        plot_y = plot_y.real
+                    else:
+                        plot_x = np.nan * np.ones_like(plot_x)
+                        plot_y = np.nan * np.ones_like(plot_y)
+
+                    label_full = f"{label}: {variable} = {expr}"
+                    if label_full not in labels_plotted:
+                        plt.plot(plot_x, plot_y, '--', label=label_full)
+                        labels_plotted.add(label_full)
+                    else:
+                        plt.plot(plot_x, plot_y, '--')
                 except Exception:
                     continue
 
@@ -91,8 +97,8 @@ def plot_phase_portrait(f_vectorized, g_vectorized, equilibria, x_range=(-3, 3),
                         start_point = np.array(eq_numeric)
                         end_point = start_point + eigvec * scale
                         plt.arrow(start_point[0], start_point[1],
-                                  eigvec[0]*scale, eigvec[1]*scale,
-                                  head_width=0.05*scale, head_length=0.1*scale, fc='green', ec='green',
+                                  eigvec[0] * scale, eigvec[1] * scale,
+                                  head_width=0.05 * scale, head_length=0.1 * scale, fc='green', ec='green',
                                   length_includes_head=True)
                         plt.text(end_point[0], end_point[1], f'λ={ev}', color='green', fontsize=9)
             except (TypeError, ValueError):
