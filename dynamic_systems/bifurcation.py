@@ -1,9 +1,8 @@
 # bifurcation.py
-
 import numpy as np
 import matplotlib.pyplot as plt
 import sympy as sp
-from sympy import symbols, solve
+from sympy import solve
 
 def generate_bifurcation_diagram(f_sym, g_sym, parameter, param_range, variables=(sp.Symbol('x'), sp.Symbol('y'))):
     equilibria_values = []
