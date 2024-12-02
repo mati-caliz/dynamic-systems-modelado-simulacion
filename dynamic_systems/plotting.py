@@ -95,9 +95,9 @@ def plot_phase_portrait(f_vectorized, g_vectorized, equilibria, x_range=(-3, 3),
                         end_point = np.array(eq_numeric) + eigvec * scale
                         plt.arrow(eq_numeric[0], eq_numeric[1],
                                   eigvec[0] * scale, eigvec[1] * scale,
-                                  head_width=0.05 * scale, head_length=0.1 * scale, fc='green', ec='green',
+                                  head_width=0.05 * scale, head_length=0.1 * scale, fc='black', ec='black',
                                   length_includes_head=True)
-                        plt.text(end_point[0], end_point[1], f'λ={ev}', color='green', fontsize=9)
+                        plt.text(end_point[0], end_point[1], f'λ={ev}', color='black', fontsize=10)
             except (TypeError, ValueError):
                 continue
 
